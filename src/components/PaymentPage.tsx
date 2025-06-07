@@ -1,10 +1,8 @@
-
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CreditCard, Copy, Shield, Star, Check } from "lucide-react";
+import { ArrowLeft, CreditCard, Shield, Star, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface PaymentPageProps {
@@ -14,39 +12,15 @@ interface PaymentPageProps {
 }
 
 const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
-  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'pix'>('stripe');
-  
-  const pixData = {
-    key: "be9475c0-abd3-4061-9d68-cf0c967113b9",
-    name: "Paulo H",
-    bank: "Banco PicPay",
-    agency: "",
-    account: ""
-  };
-
-  const copyPixKey = () => {
-    navigator.clipboard.writeText(pixData.key);
-    toast.success("Chave PIX copiada!");
-  };
-
   const handleStripePayment = () => {
-    // Open Stripe checkout in a new tab
     window.open("https://buy.stripe.com/3cIbJ1g3Z2Ry45VfdcbMQ01", '_blank');
+    toast.success("Redirecionando para pagamento...");
     
-    // Simulate payment success after a delay (in real implementation, you'd verify payment)
+    // Simulação de confirmação (troque por verificação real se necessário)
     setTimeout(() => {
       toast.success("Pagamento confirmado!");
       onSuccess();
     }, 3000);
-  };
-
-  const handlePixPayment = () => {
-    toast.success("Aguardando confirmação do pagamento PIX...");
-    // In real implementation, you'd integrate with payment verification
-    setTimeout(() => {
-      toast.success("Pagamento PIX confirmado!");
-      onSuccess();
-    }, 5000);
   };
 
   return (
@@ -130,7 +104,7 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
                 Forma de Pagamento
               </CardTitle>
               <CardDescription>
-                Escolha como deseja pagar
+                Pague com cartão de crédito via Stripe
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -145,101 +119,14 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
                 <p className="text-xs text-gray-600 mt-2">Pagamento único • Sem mensalidades</p>
               </div>
 
-              {/* Payment Methods */}
-              <div className="space-y-4">
-                {/* Stripe Payment */}
-                <div className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                  paymentMethod === 'stripe' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                }`} onClick={() => setPaymentMethod('stripe')}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
-                        paymentMethod === 'stripe' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
-                      }`}>
-                        {paymentMethod === 'stripe' && <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>}
-                      </div>
-                      <div>
-                        <p className="font-medium">Cartão de Crédito</p>
-                        <p className="text-sm text-gray-500">Visa, Mastercard, Elo</p>
-                      </div>
-                    </div>
-                    <CreditCard className="w-5 h-5 text-gray-400" />
-                  </div>
-                </div>
-
-                {/* PIX Payment */}
-                <div className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                  paymentMethod === 'pix' ? 'border-green-500 bg-green-50' : 'border-gray-200'
-                }`} onClick={() => setPaymentMethod('pix')}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
-                        paymentMethod === 'pix' ? 'border-green-500 bg-green-500' : 'border-gray-300'
-                      }`}>
-                        {paymentMethod === 'pix' && <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>}
-                      </div>
-                      <div>
-                        <p className="font-medium">PIX</p>
-                        <p className="text-sm text-gray-500">Pagamento instantâneo</p>
-                      </div>
-                    </div>
-                    <div className="w-8 h-6 bg-green-500 rounded text-white text-xs flex items-center justify-center font-bold">
-                      PIX
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Button */}
-              {paymentMethod === 'stripe' ? (
-                <Button 
-                  onClick={handleStripePayment}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                  size="lg"
-                >
-                  Pagar com Cartão - R$ 199,90
-                </Button>
-              ) : (
-                <div className="space-y-4">
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                    <h4 className="font-medium text-green-800 mb-2">Dados para PIX:</h4>
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <span className="font-medium">Favorecido:</span> {pixData.name}
-                      </div>
-                      <div>
-                        <span className="font-medium">Banco:</span> {pixData.bank}
-                      </div>
-                      <div>
-                        <span className="font-medium">Valor:</span> R$ 199,90
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-700">Chave PIX:</p>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="text"
-                        value={pixData.key}
-                        readOnly
-                        className="flex-1 p-2 border border-gray-200 rounded-lg bg-gray-50 text-xs"
-                      />
-                      <Button onClick={copyPixKey} variant="outline" size="sm">
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    onClick={handlePixPayment}
-                    className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                    size="lg"
-                  >
-                    Confirmar Pagamento PIX
-                  </Button>
-                </div>
-              )}
+              {/* Stripe Button */}
+              <Button 
+                onClick={handleStripePayment}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                size="lg"
+              >
+                Pagar com Cartão - R$ 199,90
+              </Button>
 
               <div className="text-center">
                 <p className="text-xs text-gray-500">
