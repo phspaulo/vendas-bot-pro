@@ -17,11 +17,11 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'pix'>('stripe');
   
   const pixData = {
-    key: "00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540599.905802BR5925BOTVENDAS AUTOMACAO LTDA6009SAO PAULO61081234567062160512202412076543050300017BR.GOV.BCB.BRCODE01051.0.063041C85",
-    name: "BotVendas Automação Ltda",
-    bank: "Banco do Brasil",
-    agency: "1234-5",
-    account: "67890-1"
+    key: "be9475c0-abd3-4061-9d68-cf0c967113b9",
+    name: "Paulo H",
+    bank: "Banco PicPay",
+    agency: "",
+    account: ""
   };
 
   const copyPixKey = () => {
