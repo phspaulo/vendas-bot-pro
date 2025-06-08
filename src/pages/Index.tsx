@@ -1,12 +1,12 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Bot, MessageCircle, Star, ArrowRight, Shield, Clock } from "lucide-react";
+import { Zap, MessageCircle, Star, ArrowRight, Shield, Clock } from "lucide-react";
 import BusinessForm from "@/components/BusinessForm";
 import PaymentPage from "@/components/PaymentPage";
 import SetupInstructions from "@/components/SetupInstructions";
+import Logo from "@/components/Logo";
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState<'landing' | 'form' | 'payment' | 'setup'>('landing');
@@ -39,14 +39,7 @@ const Index = () => {
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
-                <Bot className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-                BotVendas
-              </span>
-            </div>
+            <Logo size="md" />
             <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-200">
               <Star className="w-3 h-3 mr-1" />
               Produto Digital
@@ -67,11 +60,12 @@ const Index = () => {
               Chatbot de WhatsApp para seu Negócio
             </h1>
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Automatize o atendimento do seu comércio com um chatbot inteligente. 
+              Automatize o atendimento do seu comércio with um chatbot inteligente. 
               Aumente suas vendas, melhore o atendimento e economize tempo!
             </p>
           </div>
 
+          {/* Features Section */}
           <div className="grid md:grid-cols-3 gap-6 mb-12">
             <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardHeader className="text-center">
@@ -185,12 +179,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8">
         <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
-              <Bot className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-lg font-bold">BotVendas</span>
-          </div>
+          <Logo size="sm" className="justify-center mb-4" />
           <p className="text-gray-400">
             © 2024 BotVendas. Automatize seu atendimento e aumente suas vendas.
           </p>

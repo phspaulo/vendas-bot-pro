@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, CreditCard, Shield, Star, Check } from "lucide-react";
 import { toast } from "sonner";
+import Logo from "./Logo";
 
 interface PaymentPageProps {
   businessData: any;
@@ -26,7 +27,16 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
+        {/* Header with Logo */}
         <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <Logo size="md" />
+            <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-200">
+              <Star className="w-3 h-3 mr-1" />
+              Produto Digital
+            </Badge>
+          </div>
+          
           <Button 
             variant="ghost" 
             onClick={onBack}

@@ -9,9 +9,10 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      pagamentos_botvendas: {
+      pagamentos_confirmados: {
         Row: {
           cidade: string | null
+          confirmado_em: string | null
           created_at: string
           data_pagamento: string | null
           email: string
@@ -22,9 +23,11 @@ export type Database = {
           nome_do_negocio: string | null
           status_pagamento: string | null
           telefone: string
+          valor: number | null
         }
         Insert: {
           cidade?: string | null
+          confirmado_em?: string | null
           created_at?: string
           data_pagamento?: string | null
           email: string
@@ -35,9 +38,11 @@ export type Database = {
           nome_do_negocio?: string | null
           status_pagamento?: string | null
           telefone: string
+          valor?: number | null
         }
         Update: {
           cidade?: string | null
+          confirmado_em?: string | null
           created_at?: string
           data_pagamento?: string | null
           email?: string
@@ -48,6 +53,7 @@ export type Database = {
           nome_do_negocio?: string | null
           status_pagamento?: string | null
           telefone?: string
+          valor?: number | null
         }
         Relationships: []
       }
