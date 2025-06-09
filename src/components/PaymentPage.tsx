@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,7 @@ interface PaymentPageProps {
 
 const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
   const handleStripePayment = () => {
-    window.open("https://buy.stripe.com/3cIbJ1g3Z2Ry45VfdcbMQ01", '_blank');
+    window.open("https://buy.stripe.com/3cIeVd4lh77O6e3c10bMQ03", '_blank');
     toast.success("Redirecionando para pagamento...");
     
     // Simulação de confirmação (troque por verificação real se necessário)
@@ -124,8 +125,8 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
                   <Star className="w-3 h-3 mr-1" />
                   Oferta Especial
                 </Badge>
-                <div className="text-3xl font-bold text-green-600 mb-1">R$ 199,90</div>
-                <p className="text-sm text-gray-500 line-through">R$ 399,90</p>
+                <div className="text-3xl font-bold text-green-600 mb-1">R$ 29,90</div>
+                <p className="text-sm text-gray-500 line-through">R$ 199,90</p>
                 <p className="text-xs text-gray-600 mt-2">Pagamento único • Sem mensalidades</p>
               </div>
 
@@ -135,7 +136,7 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                 size="lg"
               >
-                Pagar com Cartão - R$ 199,90
+                Pagar com Cartão - R$ 29,90
               </Button>
 
               <div className="text-center">

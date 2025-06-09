@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -117,8 +118,8 @@ const Index = () => {
               </CardHeader>
               <CardContent className="text-center">
                 <div className="mb-4">
-                  <span className="text-3xl font-bold text-green-600">R$ 199,90</span>
-                  <p className="text-sm text-gray-500 line-through">R$ 399,90</p>
+                  <span className="text-3xl font-bold text-green-600">R$ 29,90</span>
+                  <p className="text-sm text-gray-500 line-through">R$ 199,90</p>
                 </div>
                 <ul className="text-left space-y-2 mb-6 text-sm">
                   <li className="flex items-center">
