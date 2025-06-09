@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,11 +17,11 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
     window.open("https://buy.stripe.com/3cIeVd4lh77O6e3c10bMQ03", '_blank');
     toast.success("Redirecionando para pagamento...");
     
-    // Simulação de confirmação (troque por verificação real se necessário)
+    // Simulação de confirmação após 1 hora
     setTimeout(() => {
       toast.success("Pagamento confirmado!");
       onSuccess();
-    }, 3000);
+    }, 3600000); // 1 hora = 3.600.000ms
   };
 
   return (
@@ -90,7 +89,7 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
               <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700">O que você receberá:</h3>
                 <div className="space-y-2">
-                  {[
+                  {[ 
                     "Chatbot personalizado com nome do seu negócio",
                     "Menu inteligente com 5 opções de atendimento",
                     "Integração com seu logo",
@@ -153,3 +152,4 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
 };
 
 export default PaymentPage;
+
