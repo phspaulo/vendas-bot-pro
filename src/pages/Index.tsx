@@ -1,17 +1,56 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, MessageCircle, Star, ArrowRight, Shield, Clock } from "lucide-react";
+import { Zap, MessageCircle, Star, ArrowRight, Shield, Clock, LogOut, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import BusinessForm from "@/components/BusinessForm";
 import PaymentPage from "@/components/PaymentPage";
 import SetupInstructions from "@/components/SetupInstructions";
+import AuthForm from "@/components/AuthForm";
 import Logo from "@/components/Logo";
+import { toast } from "sonner";
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState<'landing' | 'form' | 'payment' | 'setup'>('landing');
   const [businessData, setBusinessData] = useState(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
+
+  useEffect(() => {
+    // Verifica se há um usuário logado
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    };
+
+    getSession();
+
+    // Escuta mudanças na autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        if (event === 'SIGNED_IN') {
+          setShowAuth(false);
+          toast.success("Login realizado com sucesso!");
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Erro ao fazer logout");
+    } else {
+      toast.success("Logout realizado com sucesso!");
+      setCurrentStep('landing');
+    }
+  };
 
   const handleFormSubmit = (data: any) => {
     setBusinessData(data);
@@ -21,6 +60,18 @@ const Index = () => {
   const handlePaymentSuccess = () => {
     setCurrentStep('setup');
   };
+
+  const handleStartChatbot = () => {
+    if (!user) {
+      setShowAuth(true);
+    } else {
+      setCurrentStep('form');
+    }
+  };
+
+  if (showAuth) {
+    return <AuthForm onAuthSuccess={() => setShowAuth(false)} />;
+  }
 
   if (currentStep === 'form') {
     return <BusinessForm onSubmit={handleFormSubmit} onBack={() => setCurrentStep('landing')} />;
@@ -41,10 +92,29 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Logo size="md" />
-            <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-200">
-              <Star className="w-3 h-3 mr-1" />
-              Produto Digital
-            </Badge>
+            <div className="flex items-center space-x-4">
+              <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-200">
+                <Star className="w-3 h-3 mr-1" />
+                Produto Digital
+              </Badge>
+              {user && (
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <User className="w-4 h-4 mr-1" />
+                    {user.email}
+                  </div>
+                  <Button
+                    onClick={handleLogout}
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <LogOut className="w-4 h-4 mr-1" />
+                    Sair
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -61,7 +131,7 @@ const Index = () => {
               Chatbot de WhatsApp para seu Negócio
             </h1>
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Automatize o atendimento do seu comércio with um chatbot inteligente. 
+              Automatize o atendimento do seu comércio com um chatbot inteligente. 
               Aumente suas vendas, melhore o atendimento e economize tempo!
             </p>
           </div>
@@ -144,13 +214,19 @@ const Index = () => {
           </div>
 
           <Button 
-            onClick={() => setCurrentStep('form')}
+            onClick={handleStartChatbot}
             size="lg" 
             className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
           >
-            Criar Meu Chatbot Agora
+            {user ? "Criar Meu Chatbot Agora" : "Criar Conta e Começar"}
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
+
+          {!user && (
+            <p className="text-sm text-gray-500 mt-4">
+              É necessário fazer login para criar seu chatbot personalizado
+            </p>
+          )}
         </div>
       </section>
 
