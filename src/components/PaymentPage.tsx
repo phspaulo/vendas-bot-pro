@@ -1,9 +1,12 @@
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CreditCard, Shield, Star, Check } from "lucide-react";
+import { ArrowLeft, CreditCard, Shield, Star, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import Logo from "./Logo";
 
 interface PaymentPageProps {
@@ -13,15 +16,30 @@ interface PaymentPageProps {
 }
 
 const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
-  const handleStripePayment = () => {
-    window.open("https://buy.stripe.com/3cIeVd4lh77O6e3c10bMQ03", '_blank');
-    toast.success("Redirecionando para pagamento...");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleStripePayment = async () => {
+    setIsLoading(true);
     
-    // Simulação de confirmação após 1 hora
-    setTimeout(() => {
-      toast.success("Pagamento confirmado!");
-      onSuccess();
-    }, 3600000); // 1 hora = 3.600.000ms
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+        body: { businessData }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Redirecionar para o Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error("URL da sessão não recebida");
+      }
+    } catch (error) {
+      console.error("Erro ao criar sessão de checkout:", error);
+      toast.error("Erro ao processar pagamento. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -41,6 +59,7 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
             variant="ghost" 
             onClick={onBack}
             className="mb-4 hover:bg-blue-50"
+            disabled={isLoading}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
@@ -82,6 +101,11 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
               <div>
                 <p className="font-semibold text-gray-700">WhatsApp:</p>
                 <p className="text-gray-600">{businessData?.whatsapp}</p>
+              </div>
+
+              <div>
+                <p className="font-semibold text-gray-700">Email:</p>
+                <p className="text-gray-600">{businessData?.email}</p>
               </div>
 
               <Separator />
@@ -132,10 +156,18 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
               {/* Stripe Button */}
               <Button 
                 onClick={handleStripePayment}
+                disabled={isLoading}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                 size="lg"
               >
-                Pagar com Cartão - R$ 29,90
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  "Pagar com Cartão - R$ 29,90"
+                )}
               </Button>
 
               <div className="text-center">
@@ -152,4 +184,3 @@ const PaymentPage = ({ businessData, onSuccess, onBack }: PaymentPageProps) => {
 };
 
 export default PaymentPage;
-

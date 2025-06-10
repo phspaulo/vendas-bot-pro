@@ -9,51 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      pagamentos_confirmados: {
+      assinaturas: {
         Row: {
-          cidade: string | null
-          confirmado_em: string | null
           created_at: string
-          data_pagamento: string | null
-          email: string
-          frase_de_boas_vindas: string
-          id: string
-          nome: string | null
-          nome_do_bot: string | null
-          nome_do_negocio: string | null
-          status_pagamento: string | null
-          telefone: string
-          valor: number | null
+          id: number
         }
         Insert: {
-          cidade?: string | null
-          confirmado_em?: string | null
           created_at?: string
-          data_pagamento?: string | null
-          email: string
-          frase_de_boas_vindas: string
-          id?: string
-          nome?: string | null
-          nome_do_bot?: string | null
-          nome_do_negocio?: string | null
-          status_pagamento?: string | null
-          telefone: string
-          valor?: number | null
+          id?: number
         }
         Update: {
-          cidade?: string | null
-          confirmado_em?: string | null
           created_at?: string
-          data_pagamento?: string | null
-          email?: string
-          frase_de_boas_vindas?: string
+          id?: number
+        }
+        Relationships: []
+      }
+      pagamentos: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          status: string | null
+          stripe_session: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
           id?: string
-          nome?: string | null
-          nome_do_bot?: string | null
-          nome_do_negocio?: string | null
-          status_pagamento?: string | null
-          telefone?: string
-          valor?: number | null
+          status?: string | null
+          stripe_session?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          status?: string | null
+          stripe_session?: string | null
+        }
+        Relationships: []
+      }
+      Perfil: {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
         }
         Relationships: []
       }
