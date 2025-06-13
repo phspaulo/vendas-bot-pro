@@ -11,6 +11,7 @@ import PaymentPage from "@/components/PaymentPage";
 import SetupInstructions from "@/components/SetupInstructions";
 import AuthForm from "@/components/AuthForm";
 import Logo from "@/components/Logo";
+import AutomatedTester from "@/components/AutomatedTester";
 import { toast } from "sonner";
 
 const Index = () => {
