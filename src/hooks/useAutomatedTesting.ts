@@ -86,7 +86,7 @@ export const useAutomatedTesting = () => {
       if (text.includes('pagar') || text.includes('payment') || text.includes('checkout')) return 'Pagamento';
       if (text.includes('voltar') || text.includes('back') || ariaLabel.includes('back')) return 'Navegação';
       if (text.includes('começar') || text.includes('start') || text.includes('iniciar')) return 'Inicialização';
-      if (text.includes('enviar') || text.includes('submit') || element.type === 'submit') return 'Envio';
+      if (text.includes('enviar') || text.includes('submit') || (element as HTMLInputElement).type === 'submit') return 'Envio';
       if (classes.includes('nav') || element.closest('nav')) return 'Navegação';
       if (element.tagName.toLowerCase() === 'a') return 'Link';
       

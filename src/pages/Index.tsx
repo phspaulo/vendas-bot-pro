@@ -43,6 +43,19 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Adiciona useEffect para detectar login e atualizar currentStep
+  useEffect(() => {
+    if (user && currentStep === 'landing' && !showAuth) {
+      console.log("Usuário logado detectado, redirecionando para formulário");
+      setCurrentStep('form');
+    }
+  }, [user, currentStep, showAuth]);
+
+  // Console.log para debug
+  useEffect(() => {
+    console.log("Usuário atual:", user);
+  }, [user]);
+
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -62,16 +75,32 @@ const Index = () => {
     setCurrentStep('setup');
   };
 
-  const handleStartChatbot = () => {
-    if (!user) {
+  // Melhora o handleStartChatbot para ser mais robusto
+  const handleStartChatbot = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
       setShowAuth(true);
     } else {
+      setUser(session.user); // garante que o estado atualize
       setCurrentStep('form');
     }
   };
 
+  // Melhora o onAuthSuccess para aguardar a sessão ser atualizada
+  const handleAuthSuccess = async () => {
+    setShowAuth(false);
+    // Aguarda um pouco para o Supabase atualizar a sessão
+    setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        setCurrentStep('form');
+      }
+    }, 100);
+  };
+
   if (showAuth) {
-    return <AuthForm onAuthSuccess={() => setShowAuth(false)} />;
+    return <AuthForm onAuthSuccess={handleAuthSuccess} />;
   }
 
   if (currentStep === 'form') {
