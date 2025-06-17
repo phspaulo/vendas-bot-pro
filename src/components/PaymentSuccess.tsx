@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -56,112 +55,435 @@ const PaymentSuccess = () => {
   const generateChatbotScript = () => {
     if (!paymentData?.businessData) return '';
 
-    const { businessName, segment, whatsapp, address, socialMediaLink } = paymentData.businessData;
+    const { businessName, segment, whatsapp, address, socialMediaLink, description } = paymentData.businessData;
     
     return `// 🤖 CHATBOT PERSONALIZADO PARA ${businessName.toUpperCase()}
 // Gerado automaticamente - BotVendas.com
 
-const chatbotConfig = {
-  businessName: "${businessName}",
-  segment: "${segment}",
-  whatsapp: "${whatsapp}",
-  address: "${address}",
-  socialMedia: "${socialMediaLink}",
-};
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
 
-// Função principal do chatbot
-function initializeChatbot() {
-  const menuOptions = [
-    "1️⃣ Ver nossos produtos/serviços",
-    "2️⃣ Informações sobre localização",
-    "3️⃣ Horário de funcionamento", 
-    "4️⃣ Promoções especiais",
-    "5️⃣ Falar com atendente"
-  ];
+const client = new Client({
+    authStrategy: new LocalAuth()
+});
 
-  const welcomeMessage = \`
-🎉 Olá! Bem-vindo(a) à *\${chatbotConfig.businessName}*!
+client.on('qr', (qr) => {
+    qrcode.generate(qr, {small: true});
+    console.log('📱 QR Code gerado! Escaneie com seu WhatsApp para conectar o chatbot.');
+});
 
-Somos especialistas em \${chatbotConfig.segment.toLowerCase()} e estamos aqui para te atender da melhor forma.
+client.on('ready', () => {
+    console.log('✅ ${businessName} - Chatbot está online e funcionando!');
+});
 
-📍 *Localização:* \${chatbotConfig.address}
-${socialMediaLink ? `📱 *Instagram:* \${chatbotConfig.socialMedia}` : ''}
+client.on('message', async (message) => {
+    // Evita responder mensagens próprias e de grupos
+    if (message.fromMe || message.from.includes('@g.us')) return;
+    
+    const userMessage = message.body.toLowerCase().trim();
+    const senderName = message._data.notifyName || 'Cliente';
+    
+    console.log(\`📩 Mensagem recebida de \${senderName}: \${userMessage}\`);
+    
+    // Menu principal - palavras de ativação
+    if (['menu', 'oi', 'olá', 'ola', 'começar', 'iniciar', 'help', 'ajuda'].includes(userMessage)) {
+        const menuText = \`🤖 *Olá \${senderName}! Bem-vindo(a) à ${businessName}!*
 
-*Como posso te ajudar hoje?*
+${description ? '📋 ' + description : ''}
 
-\${menuOptions.join('\\n')}
+📍 *Localização:* ${address}
+${socialMediaLink ? '📱 *Redes Sociais:* ' + socialMediaLink : ''}
 
-Digite o número da opção desejada! 👆
-\`;
+*📋 Menu de Atendimento:*
 
-  // Respostas automáticas
-  const responses = {
-    "1": \`
-🛍️ *Nossos Produtos/Serviços*
+*1* - ℹ️ Informações sobre nossos ${segment === 'Lanchonete' ? 'produtos' : segment === 'Salão de Beleza' ? 'serviços' : segment === 'Petshop' ? 'serviços' : 'produtos/serviços'}
+*2* - 💰 Preços e formas de pagamento  
+*3* - 📍 Localização e horários
+*4* - 🎁 Promoções especiais
+*5* - 👥 Falar com atendente
 
-Trabalhamos com o que há de melhor em \${chatbotConfig.segment.toLowerCase()}!
+Digite o *número* da opção desejada! 🔢\`;
+        
+        await message.reply(menuText);
+        return;
+    }
+    
+    // Opção 1 - Informações sobre produtos/serviços
+    if (userMessage === '1') {
+        let serviceText = '';
+        
+        switch('${segment}') {
+            case 'Lanchonete':
+                serviceText = \`🍔 *Nossos Deliciosos Produtos:*
 
-${segment === 'Lanchonete' ? '🍔 Hambúrguers artesanais\\n🍕 Pizzas saborosas\\n🥤 Bebidas geladas\\n🍟 Porções especiais' : 
-  segment === 'Salão de Beleza' ? '💇‍♀️ Cortes e penteados\\n💅 Manicure e pedicure\\n🎨 Coloração profissional\\n✨ Tratamentos capilares' :
-  segment === 'Petshop' ? '🐕 Banho e tosa\\n🦴 Ração premium\\n🏥 Consultas veterinárias\\n🎾 Brinquedos e acessórios' :
-  '🔥 Produtos e serviços de qualidade\\n⭐ Atendimento especializado\\n💯 Melhores preços da região'}
+🥪 *Sanduíches e Hambúrguers:*
+• Hambúrguer artesanal
+• X-Bacon especial  
+• Sanduíche natural
+• Vegetariano gourmet
 
-Para mais detalhes, digite *5* para falar com nosso atendente!
-\`,
-    "2": \`
-📍 *Nossa Localização*
+🍕 *Pizzas:*
+• Pizza margherita
+• Pizza portuguesa
+• Pizza calabresa
+• Pizza especial da casa
 
-\${chatbotConfig.address}
+🥤 *Bebidas:*
+• Sucos naturais
+• Refrigerantes
+• Vitaminas
+• Café expresso
 
-🚗 Fácil acesso e estacionamento
-🗺️ Ponto de referência: [Descreva um ponto próximo]
+🍟 *Acompanhamentos:*
+• Batata frita
+• Onion rings
+• Salada verde
+• Porções especiais\`;
+                break;
+                
+            case 'Salão de Beleza':
+                serviceText = \`💄 *Nossos Serviços de Beleza:*
 
-Digite *5* se precisar de mais informações sobre como chegar!
-\`,
-    "3": \`
-🕒 *Horário de Funcionamento*
+💇‍♀️ *Cabelos:*
+• Corte feminino e masculino
+• Escova e penteados
+• Coloração profissional
+• Luzes e mechas
+• Progressiva e relaxamento
+• Hidratação profunda
 
-📅 Segunda à Sexta: 08:00 às 18:00
-📅 Sábado: 08:00 às 16:00  
-📅 Domingo: Fechado
+💅 *Unhas:*
+• Manicure tradicional
+• Pedicure completo
+• Unhas em gel
+• Nail art
+• Spa para as mãos
 
-⚠️ *Importante:* Nossos horários podem variar em feriados.
+✨ *Tratamentos:*
+• Limpeza de pele
+• Design de sobrancelhas
+• Aplicação de cílios
+• Massagem relaxante\`;
+                break;
+                
+            case 'Petshop':
+                serviceText = \`🐕 *Nossos Serviços Pet:*
 
-Para confirmação, digite *5* para falar conosco!
-\`,
-    "4": \`
-🎁 *Promoções Especiais*
+🛁 *Banho e Tosa:*
+• Banho relaxante
+• Tosa higiênica
+• Tosa na máquina
+• Tosa artística
+• Hidratação dos pelos
 
-🔥 Temos sempre ofertas imperdíveis para você!
+🏥 *Cuidados Veterinários:*
+• Consultas gerais
+• Vacinação
+• Vermifugação
+• Microchipagem
+• Exames laboratoriais
 
-${segment === 'Lanchonete' ? '• 2 Hambúrguers por R$ 25,00\\n• Pizza família + refrigerante por R$ 35,00' :
-  segment === 'Salão de Beleza' ? '• Pacote completo (corte + escova + unha) por R$ 80,00\\n• Progressiva com 30% de desconto' :
-  '• Promoções especiais toda semana\\n• Descontos para clientes fiéis'}
+🛒 *Produtos:*
+• Ração premium
+• Petiscos e ossinhos
+• Brinquedos
+• Camas e casinhas
+• Coleiras e guias
+• Produtos de higiene\`;
+                break;
+                
+            default:
+                serviceText = \`🏪 *Nossos Produtos e Serviços:*
 
-📲 Digite *5* para saber mais detalhes com nosso atendente!
-\`,
-    "5": \`
-👥 *Conectando com Atendente...*
+✨ Trabalhamos com produtos e serviços de alta qualidade em ${segment.toLowerCase()}.
 
-Um momento! Você será transferido para um de nossos atendentes.
+🎯 *Principais ofertas:*
+• Atendimento especializado e personalizado
+• Produtos selecionados e de qualidade
+• Preços competitivos no mercado
+• Garantia em todos os serviços
+• Equipe profissional e experiente
 
-📞 *WhatsApp:* \${chatbotConfig.whatsapp}
-⏰ *Tempo de resposta:* Até 5 minutos
+💯 *Nosso compromisso:*
+• Satisfação do cliente em primeiro lugar
+• Qualidade garantida
+• Atendimento rápido e eficiente\`;
+        }
+        
+        const responseText = \`\${serviceText}
 
-Obrigado por escolher a *\${chatbotConfig.businessName}*! 🙏
-\`
-  };
+📞 *Para mais informações:*
+WhatsApp: ${whatsapp}
 
-  return {
-    welcomeMessage,
-    responses,
-    config: chatbotConfig
-  };
-}
+Digite *menu* para voltar ao início! 🏠\`;
+        
+        await message.reply(responseText);
+        return;
+    }
+    
+    // Opção 2 - Preços e pagamento
+    if (userMessage === '2') {
+        let priceText = '';
+        
+        switch('${segment}') {
+            case 'Lanchonete':
+                priceText = \`💰 *Tabela de Preços:*
 
-// Exportar o chatbot
-window.chatbot = initializeChatbot();
-console.log("🤖 Chatbot inicializado para", chatbotConfig.businessName);`;
+🍔 *Hambúrguers:*
+• Hambúrguer simples: R$ 12,00
+• X-Bacon: R$ 15,00
+• X-Tudo: R$ 18,00
+• Vegetariano: R$ 14,00
+
+🍕 *Pizzas:*
+• Pizza individual: R$ 16,00
+• Pizza média: R$ 28,00
+• Pizza família: R$ 35,00
+
+🥤 *Bebidas:*
+• Refrigerante lata: R$ 4,00
+• Suco natural: R$ 6,00
+• Água: R$ 2,50\`;
+                break;
+                
+            case 'Salão de Beleza':
+                priceText = \`💰 *Tabela de Preços:*
+
+💇‍♀️ *Cabelos:*
+• Corte feminino: R$ 35,00
+• Corte masculino: R$ 25,00
+• Escova: R$ 20,00
+• Coloração: R$ 80,00
+• Progressiva: R$ 120,00
+
+💅 *Unhas:*
+• Manicure: R$ 15,00
+• Pedicure: R$ 20,00
+• Unhas em gel: R$ 35,00
+
+✨ *Tratamentos:*
+• Limpeza de pele: R$ 45,00
+• Design sobrancelha: R$ 15,00\`;
+                break;
+                
+            case 'Petshop':
+                priceText = \`💰 *Tabela de Preços:*
+
+🛁 *Banho e Tosa:*
+• Banho (cães pequenos): R$ 25,00
+• Banho (cães médios): R$ 35,00
+• Banho (cães grandes): R$ 45,00
+• Tosa completa: +R$ 15,00
+
+🏥 *Consultas:*
+• Consulta veterinária: R$ 80,00
+• Vacinas: R$ 45,00 cada
+• Vermifugação: R$ 25,00\`;
+                break;
+                
+            default:
+                priceText = \`💰 *Informações sobre Preços:*
+
+🏷️ Trabalhamos com preços justos e competitivos no mercado de ${segment.toLowerCase()}.
+
+💳 *Condições especiais:*
+• Primeira compra com desconto
+• Pacotes promocionais
+• Descontos para clientes fiéis\`;
+        }
+        
+        const responseText = \`\${priceText}
+
+💳 *Formas de Pagamento:*
+• Dinheiro (10% desconto)
+• PIX (5% desconto)
+• Cartão de débito
+• Cartão de crédito (até 3x sem juros)
+
+📞 *Orçamentos personalizados:*
+WhatsApp: ${whatsapp}
+
+Digite *menu* para voltar ao início! 🏠\`;
+        
+        await message.reply(responseText);
+        return;
+    }
+    
+    // Opção 3 - Localização e horários
+    if (userMessage === '3') {
+        const responseText = \`📍 *Nossa Localização:*
+
+🏪 *Endereço:*
+${address}
+
+🕒 *Horário de Funcionamento:*
+• Segunda à Sexta: 8h às 18h
+• Sábado: 8h às 16h
+• Domingo: 9h às 14h
+
+🚗 *Como chegar:*
+• Fácil acesso e estacionamento
+• Próximo ao centro da cidade
+• Transporte público disponível
+
+📱 *Contato direto:*
+WhatsApp: ${whatsapp}
+${socialMediaLink ? 'Redes Sociais: ' + socialMediaLink : ''}
+
+Digite *menu* para voltar ao início! 🏠\`;
+        
+        await message.reply(responseText);
+        return;
+    }
+    
+    // Opção 4 - Promoções especiais
+    if (userMessage === '4') {
+        let promoText = '';
+        
+        switch('${segment}') {
+            case 'Lanchonete':
+                promoText = \`🎁 *Promoções Especiais:*
+
+🔥 *Combos em Promoção:*
+• Hambúrguer + Batata + Refri: R$ 22,00
+• 2 Pizzas médias: R$ 45,00
+• Combo família: R$ 35,00
+
+📅 *Promoções Semanais:*
+• Segunda: 20% off em hambúrguers
+• Quarta: Pizza meio a meio
+• Sexta: Combo especial
+• Domingo: Desconto família\`;
+                break;
+                
+            case 'Salão de Beleza':
+                promoText = \`🎁 *Promoções Especiais:*
+
+💅 *Pacotes Promocionais:*
+• Corte + Escova + Manicure: R$ 60,00
+• Progressiva + Corte: R$ 140,00
+• Pacote noiva completo: R$ 200,00
+
+📅 *Promoções Mensais:*
+• Clientes novas: 20% desconto
+• Aniversariantes: 15% off
+• Indicação de amiga: 10% desconto\`;
+                break;
+                
+            case 'Petshop':
+                promoText = \`🎁 *Promoções Especiais:*
+
+🐕 *Pacotes Pet:*
+• Banho + Tosa + Unha: R$ 45,00
+• 5 banhos: R$ 120,00
+• Consulta + Vacina: R$ 110,00
+
+📅 *Promoções do Mês:*
+• Novos clientes: 1º banho grátis
+• Castração: preço especial
+• Ração premium: 10% off\`;
+                break;
+                
+            default:
+                promoText = \`🎁 *Promoções Especiais:*
+
+🌟 *Ofertas Imperdíveis:*
+• Desconto para novos clientes
+• Promoções sazonais
+• Pacotes especiais
+• Descontos por indicação\`;
+        }
+        
+        const responseText = \`\${promoText}
+
+⏰ *Válido por tempo limitado!*
+
+📲 Para aproveitar, entre em contato:
+WhatsApp: ${whatsapp}
+
+Digite *menu* para voltar ao início! 🏠\`;
+        
+        await message.reply(responseText);
+        return;
+    }
+    
+    // Opção 5 - Falar com atendente
+    if (userMessage === '5') {
+        const responseText = \`👥 *Atendimento Personalizado*
+
+🤝 Você será transferido para nossa equipe de atendimento!
+
+📱 *Contato direto:*
+WhatsApp: ${whatsapp}
+
+⏰ *Horário de atendimento humano:*
+• Segunda à Sexta: 8h às 18h
+• Sábado: 8h às 16h
+• Resposta em até 30 minutos
+
+💬 *Nossa equipe pode ajudar com:*
+• Pedidos personalizados
+• Dúvidas específicas
+• Agendamentos
+• Informações detalhadas
+• Suporte técnico
+
+Obrigado por escolher a *${businessName}*! 🙏
+
+Digite *menu* para voltar ao início! 🏠\`;
+        
+        await message.reply(responseText);
+        return;
+    }
+    
+    // Respostas para cumprimentos adicionais
+    if (['bom dia', 'boa tarde', 'boa noite', 'obrigado', 'obrigada', 'valeu', 'tchau', 'até logo'].includes(userMessage)) {
+        const greetingResponses = [
+            \`😊 Muito obrigado! Esperamos você na *${businessName}*!\`,
+            \`🙏 Foi um prazer atendê-lo! Volte sempre!\`,
+            \`✨ Obrigado pelo contato! Estamos sempre aqui para ajudar!\`,
+            \`💙 Até logo! A *${businessName}* agradece sua preferência!\`
+        ];
+        
+        const randomResponse = greetingResponses[Math.floor(Math.random() * greetingResponses.length)];
+        await message.reply(randomResponse);
+        return;
+    }
+    
+    // Mensagem padrão para comandos não reconhecidos
+    const defaultText = \`🤖 Olá! Não entendi sua mensagem.
+
+Digite *menu* para ver todas as opções disponíveis.
+
+Ou escolha uma das opções rápidas:
+• *1* - Informações sobre ${segment === 'Lanchonete' ? 'produtos' : 'serviços'}
+• *2* - Preços e pagamento
+• *3* - Localização e horários
+• *4* - Promoções especiais
+• *5* - Falar com atendente
+
+📱 *Contato direto:* ${whatsapp}\`;
+    
+    await message.reply(defaultText);
+});
+
+// Captura erros
+client.on('auth_failure', msg => {
+    console.error('❌ Falha na autenticação:', msg);
+});
+
+client.on('disconnected', (reason) => {
+    console.log('📱 Cliente desconectado:', reason);
+});
+
+// Inicializar o cliente
+client.initialize();
+
+console.log('🚀 Iniciando chatbot para ${businessName}...');
+console.log('📋 Segmento: ${segment}');
+console.log('📍 Local: ${address}');
+console.log('📱 WhatsApp: ${whatsapp}');
+console.log('⏰ Aguardando QR Code...`;
   };
 
   const downloadChatbot = () => {
@@ -281,9 +603,10 @@ console.log("🤖 Chatbot inicializado para", chatbotConfig.businessName);`;
                 <div className="space-y-1 text-sm text-blue-700">
                   <div>• Mensagem de boas-vindas personalizada</div>
                   <div>• Menu com 5 opções de atendimento</div>
-                  <div>• Informações do seu negócio</div>
+                  <div>• Informações específicas do seu negócio</div>
+                  <div>• Tabela de preços personalizada</div>
                   <div>• Redirecionamento para WhatsApp</div>
-                  <div>• Código limpo e documentado</div>
+                  <div>• Código completo e documentado</div>
                 </div>
               </div>
 

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, MessageCircle, Star, ArrowRight, Shield, Clock, LogOut, User } from "lucide-react";
+import { Zap, MessageCircle, Star, ArrowRight, Shield, Clock, LogOut, User, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import BusinessForm from "@/components/BusinessForm";
@@ -211,32 +211,41 @@ const Index = () => {
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-green-500"></div>
               <CardHeader className="text-center pb-3">
                 <Badge className="mx-auto mb-2 bg-green-500 hover:bg-green-600">
-                  Oferta Especial
+                  🔥 Oferta por Tempo Limitado
                 </Badge>
                 <CardTitle className="text-2xl">Chatbot Personalizado</CardTitle>
-                <CardDescription>Pronto para seu negócio</CardDescription>
+                <CardDescription>Pronto para seu negócio em minutos</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
                 <div className="mb-4">
-                  <span className="text-3xl font-bold text-green-600">R$ 29,90</span>
-                  <p className="text-sm text-gray-500 line-through">R$ 199,90</p>
+                  <span className="text-4xl font-bold text-green-600">R$ 29,90</span>
+                  <p className="text-lg text-gray-500 line-through">De R$ 299,90</p>
+                  <p className="text-sm text-green-600 font-semibold">90% de desconto!</p>
                 </div>
                 <ul className="text-left space-y-2 mb-6 text-sm">
                   <li className="flex items-center">
-                    <Shield className="w-4 h-4 text-green-500 mr-2" />
-                    Chatbot totalmente personalizado
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                    Chatbot 100% personalizado para seu negócio
                   </li>
                   <li className="flex items-center">
-                    <Shield className="w-4 h-4 text-green-500 mr-2" />
-                    Menu inteligente com 5 opções
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                    Menu inteligente com 5 opções de atendimento
                   </li>
                   <li className="flex items-center">
-                    <Shield className="w-4 h-4 text-green-500 mr-2" />
-                    Integração com seu logo
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                    Respostas automáticas personalizadas
                   </li>
                   <li className="flex items-center">
-                    <Shield className="w-4 h-4 text-green-500 mr-2" />
-                    Suporte completo para instalação
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                    Código pronto para usar (JavaScript)
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                    Instruções completas de instalação
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                    Suporte completo via WhatsApp
                   </li>
                 </ul>
               </CardContent>
@@ -264,16 +273,16 @@ const Index = () => {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Perfeito para seu Negócio</h2>
+            <h2 className="text-3xl font-bold mb-4">Perfeito para Qualquer Negócio</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Seja qual for o seu segmento, nosso chatbot se adapta às suas necessidades
+              Seja qual for o seu segmento, nosso chatbot se adapta às suas necessidades específicas
             </p>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              "Lanchonetes", "Salões de Beleza", "Petshops", "Barbearias", 
-              "Depósitos de Água", "Pizzarias", "Lojas de Roupas", "Farmácias"
+              "🍔 Lanchonetes", "💄 Salões de Beleza", "🐕 Petshops", "✂️ Barbearias", 
+              "💧 Depósitos de Água", "🍕 Pizzarias", "👗 Lojas de Roupas", "💊 Farmácias"
             ].map((business, index) => (
               <div key={index} className="text-center p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                 <span className="font-medium text-gray-700">{business}</span>
@@ -283,12 +292,51 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Garantia Section */}
+      <section className="py-16 bg-gradient-to-r from-green-50 to-blue-50">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4">100% Satisfação Garantida</h2>
+            <p className="text-lg text-gray-600 mb-8">
+              Se você não ficar completamente satisfeito com seu chatbot, 
+              devolvemos seu dinheiro em até 7 dias. Sem perguntas, sem complicações.
+            </p>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-8 h-8 text-green-600" />
+                </div>
+                <h3 className="font-semibold mb-2">Garantia de 7 dias</h3>
+                <p className="text-sm text-gray-600">Dinheiro de volta se não estiver satisfeito</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MessageCircle className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="font-semibold mb-2">Suporte completo</h3>
+                <p className="text-sm text-gray-600">Ajuda com instalação e configuração</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Zap className="w-8 h-8 text-purple-600" />
+                </div>
+                <h3 className="font-semibold mb-2">Entrega imediata</h3>
+                <p className="text-sm text-gray-600">Chatbot pronto em poucos minutos</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8">
         <div className="container mx-auto px-4 text-center">
           <Logo size="sm" className="justify-center mb-4" />
-          <p className="text-gray-400">
+          <p className="text-gray-400 mb-2">
             © 2024 BotVendas. Automatize seu atendimento e aumente suas vendas.
+          </p>
+          <p className="text-sm text-gray-500">
+            Produto digital - Entrega imediata após pagamento aprovado
           </p>
         </div>
       </footer>
