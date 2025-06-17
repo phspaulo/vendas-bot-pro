@@ -11,7 +11,6 @@ import PaymentPage from "@/components/PaymentPage";
 import SetupInstructions from "@/components/SetupInstructions";
 import AuthForm from "@/components/AuthForm";
 import Logo from "@/components/Logo";
-import AutomatedTester from "@/components/AutomatedTester";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -19,12 +18,24 @@ const Index = () => {
   const [businessData, setBusinessData] = useState(null);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showAuth, setShowAuth] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Verifica se há um usuário logado
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("Erro ao obter sessão:", error);
+        } else {
+          setUser(session?.user ?? null);
+          console.log("Sessão obtida:", session?.user ? "Usuário logado" : "Nenhum usuário");
+        }
+      } catch (error) {
+        console.error("Erro ao verificar sessão:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     getSession();
@@ -32,10 +43,16 @@ const Index = () => {
     // Escuta mudanças na autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Mudança de autenticação:", event, session?.user ? "Usuário logado" : "Usuário deslogado");
         setUser(session?.user ?? null);
         if (event === 'SIGNED_IN') {
           setShowAuth(false);
           toast.success("Login realizado com sucesso!");
+          setCurrentStep('form');
+        }
+        if (event === 'SIGNED_OUT') {
+          setCurrentStep('landing');
+          setBusinessData(null);
         }
       }
     );
@@ -43,51 +60,50 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Adiciona useEffect para detectar login e atualizar currentStep
-  useEffect(() => {
-    if (user && currentStep === 'landing' && !showAuth) {
-      console.log("Usuário logado detectado, redirecionando para formulário");
-      setCurrentStep('form');
-    }
-  }, [user, currentStep, showAuth]);
-
-  // Console.log para debug
-  useEffect(() => {
-    console.log("Usuário atual:", user);
-  }, [user]);
-
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Erro ao fazer logout");
-    } else {
-      toast.success("Logout realizado com sucesso!");
-      setCurrentStep('landing');
+    try {
+      console.log("Iniciando logout...");
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Erro ao fazer logout:", error);
+        toast.error("Erro ao fazer logout");
+      } else {
+        console.log("Logout realizado com sucesso");
+        toast.success("Logout realizado com sucesso!");
+        setCurrentStep('landing');
+        setBusinessData(null);
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Erro inesperado no logout:", error);
+      toast.error("Erro inesperado ao fazer logout");
     }
   };
 
   const handleFormSubmit = (data: any) => {
+    console.log("Dados do formulário enviados:", data);
     setBusinessData(data);
     setCurrentStep('payment');
   };
 
   const handlePaymentSuccess = () => {
+    console.log("Pagamento realizado com sucesso");
     setCurrentStep('setup');
   };
 
-  // Melhora o handleStartChatbot para ser mais robusto
   const handleStartChatbot = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
+    console.log("Botão 'Criar Chatbot' clicado");
+    if (!user) {
+      console.log("Usuário não logado, mostrando formulário de autenticação");
       setShowAuth(true);
     } else {
-      setUser(session.user); // garante que o estado atualize
+      console.log("Usuário já logado, indo para formulário");
       setCurrentStep('form');
     }
   };
 
-  // Melhora o onAuthSuccess para aguardar a sessão ser atualizada
   const handleAuthSuccess = async () => {
+    console.log("Autenticação bem-sucedida");
     setShowAuth(false);
     // Aguarda um pouco para o Supabase atualizar a sessão
     setTimeout(async () => {
@@ -99,16 +115,37 @@ const Index = () => {
     }, 100);
   };
 
+  const handleBackToLanding = () => {
+    console.log("Voltando para landing page");
+    setCurrentStep('landing');
+  };
+
+  const handleBackToForm = () => {
+    console.log("Voltando para formulário");
+    setCurrentStep('form');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <Logo size="lg" className="justify-center mb-4" />
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (showAuth) {
     return <AuthForm onAuthSuccess={handleAuthSuccess} />;
   }
 
   if (currentStep === 'form') {
-    return <BusinessForm onSubmit={handleFormSubmit} onBack={() => setCurrentStep('landing')} />;
+    return <BusinessForm onSubmit={handleFormSubmit} onBack={handleBackToLanding} />;
   }
 
   if (currentStep === 'payment') {
-    return <PaymentPage businessData={businessData} onSuccess={handlePaymentSuccess} onBack={() => setCurrentStep('form')} />;
+    return <PaymentPage businessData={businessData} onSuccess={handlePaymentSuccess} onBack={handleBackToForm} />;
   }
 
   if (currentStep === 'setup') {
