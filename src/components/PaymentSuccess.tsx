@@ -1,381 +1,331 @@
 
 import { useState, useEffect } from "react";
+import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Download, MessageCircle, ArrowRight, Star, Gift } from "lucide-react";
+import { CheckCircle, Download, MessageCircle, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import Logo from "./Logo";
 
 const PaymentSuccess = () => {
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('session_id');
+  const [isLoading, setIsLoading] = useState(true);
+  const [paymentData, setPaymentData] = useState<any>(null);
+  const [error, setError] = useState<string>('');
 
-  // Código do chatbot personalizado
-  const chatbotCode = `const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+  useEffect(() => {
+    const verifyPayment = async () => {
+      if (!sessionId) {
+        setError('ID da sessão não encontrado');
+        setIsLoading(false);
+        return;
+      }
 
-const client = new Client({
-    authStrategy: new LocalAuth()
-});
-
-client.on('qr', (qr) => {
-    qrcode.generate(qr, {small: true});
-    console.log('QR Code gerado! Escaneie com seu WhatsApp.');
-});
-
-client.on('ready', () => {
-    console.log('✅ Seu Chatbot está online!');
-});
-
-client.on('message', async (message) => {
-    const userMessage = message.body.toLowerCase();
-    const senderName = message._data.notifyName || 'Cliente';
-    
-    // Menu principal
-    if (userMessage === 'menu' || userMessage === 'oi' || userMessage === 'olá' || userMessage === 'começar') {
-        const menuText = \`🤖 *Olá \${senderName}! Bem-vindo(a) ao nosso atendimento!*
-
-📋 *Menu de Atendimento:*
-
-*1* - ℹ️ Informações sobre produtos/serviços
-*2* - 💰 Preços e formas de pagamento  
-*3* - ✨ Benefícios e vantagens
-*4* - 🚀 Como fazer pedido
-*5* - 👨‍💼 Falar com atendente
-
-Digite o *número* da opção desejada!\`;
+      try {
+        console.log('🔍 Verificando pagamento para sessão:', sessionId);
         
-        await message.reply(menuText);
-    }
-    
-    // Opção 1 - Informações
-    else if (userMessage === '1') {
-        const responseText = \`📋 *Informações sobre nossos produtos/serviços:*
+        const { data, error } = await supabase.functions.invoke('verify-payment', {
+          body: { sessionId }
+        });
 
-🏪 Somos uma empresa comprometida com a qualidade e satisfação dos nossos clientes.
+        if (error) throw error;
 
-💼 *Nossos diferenciais:*
-• Atendimento especializado
-• Produtos/serviços de alta qualidade
-• Entrega rápida e eficiente
-• Suporte completo ao cliente
-
-🕒 *Horário de funcionamento:*
-Segunda a Sexta: 8h às 18h
-Sábado: 8h às 14h
-
-Digite *menu* para voltar ao início!\`;
+        console.log('✅ Dados do pagamento verificados:', data);
         
-        await message.reply(responseText);
-    }
+        if (data.isPaid) {
+          setPaymentData(data);
+          toast.success('Pagamento confirmado com sucesso!');
+        } else {
+          setError('Pagamento ainda não foi processado');
+        }
+      } catch (err: any) {
+        console.error('❌ Erro ao verificar pagamento:', err);
+        setError(err.message || 'Erro ao verificar pagamento');
+        toast.error('Erro ao verificar pagamento');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    verifyPayment();
+  }, [sessionId]);
+
+  const generateChatbotScript = () => {
+    if (!paymentData?.businessData) return '';
+
+    const { businessName, segment, whatsapp, address, socialMediaLink } = paymentData.businessData;
     
-    // Opção 2 - Preços
-    else if (userMessage === '2') {
-        const responseText = \`💰 *Preços e Formas de Pagamento:*
+    return `// 🤖 CHATBOT PERSONALIZADO PARA ${businessName.toUpperCase()}
+// Gerado automaticamente - BotVendas.com
 
-💳 *Aceitamos:*
-• Dinheiro
-• PIX (com desconto especial!)
-• Cartão de débito/crédito
-• Transferência bancária
+const chatbotConfig = {
+  businessName: "${businessName}",
+  segment: "${segment}",
+  whatsapp: "${whatsapp}",
+  address: "${address}",
+  socialMedia: "${socialMediaLink}",
+};
 
-🎯 *Promoções:*
-• 10% de desconto no PIX
-• Parcelamento em até 3x sem juros
-• Desconto para clientes fiéis
+// Função principal do chatbot
+function initializeChatbot() {
+  const menuOptions = [
+    "1️⃣ Ver nossos produtos/serviços",
+    "2️⃣ Informações sobre localização",
+    "3️⃣ Horário de funcionamento", 
+    "4️⃣ Promoções especiais",
+    "5️⃣ Falar com atendente"
+  ];
 
-📞 Para orçamentos detalhados, digite *5* para falar com nosso atendente.
+  const welcomeMessage = \`
+🎉 Olá! Bem-vindo(a) à *\${chatbotConfig.businessName}*!
 
-Digite *menu* para voltar ao início!\`;
-        
-        await message.reply(responseText);
-    }
-    
-    // Opção 3 - Benefícios
-    else if (userMessage === '3') {
-        const responseText = \`✨ *Benefícios e Vantagens:*
+Somos especialistas em \${chatbotConfig.segment.toLowerCase()} e estamos aqui para te atender da melhor forma.
 
-🏆 *Por que escolher nossa empresa:*
+📍 *Localização:* \${chatbotConfig.address}
+${socialMediaLink ? `📱 *Instagram:* \${chatbotConfig.socialMedia}` : ''}
 
-⭐ Qualidade garantida
-⚡ Atendimento rápido
-🔒 Segurança e confiança  
-💯 Satisfação garantida
-🎁 Programas de fidelidade
-📱 Atendimento 24/7 pelo WhatsApp
+*Como posso te ajudar hoje?*
 
-🌟 *Diferenciais exclusivos:*
-• Experiência no mercado
-• Clientes satisfeitos
-• Produtos/serviços certificados
-• Equipe especializada
+\${menuOptions.join('\\n')}
 
-Digite *menu* para voltar ao início!\`;
-        
-        await message.reply(responseText);
-    }
-    
-    // Opção 4 - Como fazer pedido
-    else if (userMessage === '4') {
-        const responseText = \`🚀 *Como Fazer seu Pedido:*
+Digite o número da opção desejada! 👆
+\`;
 
-📞 *É muito fácil! Siga os passos:*
+  // Respostas automáticas
+  const responses = {
+    "1": \`
+🛍️ *Nossos Produtos/Serviços*
 
-1️⃣ Entre em contato conosco
-2️⃣ Solicite seu orçamento gratuito
-3️⃣ Escolha a melhor opção
-4️⃣ Confirme seu pedido
-5️⃣ Receba com rapidez e qualidade!
+Trabalhamos com o que há de melhor em \${chatbotConfig.segment.toLowerCase()}!
 
-📱 *Para continuar:*
-Digite *5* para falar com nosso atendente
-ou
-Digite *menu* para ver outras opções
+${segment === 'Lanchonete' ? '🍔 Hambúrguers artesanais\\n🍕 Pizzas saborosas\\n🥤 Bebidas geladas\\n🍟 Porções especiais' : 
+  segment === 'Salão de Beleza' ? '💇‍♀️ Cortes e penteados\\n💅 Manicure e pedicure\\n🎨 Coloração profissional\\n✨ Tratamentos capilares' :
+  segment === 'Petshop' ? '🐕 Banho e tosa\\n🦴 Ração premium\\n🏥 Consultas veterinárias\\n🎾 Brinquedos e acessórios' :
+  '🔥 Produtos e serviços de qualidade\\n⭐ Atendimento especializado\\n💯 Melhores preços da região'}
 
-⏰ *Resposta em até 30 minutos!*
+Para mais detalhes, digite *5* para falar com nosso atendente!
+\`,
+    "2": \`
+📍 *Nossa Localização*
 
-Digite *menu* para voltar ao início!\`;
-        
-        await message.reply(responseText);
-    }
-    
-    // Opção 5 - Atendente
-    else if (userMessage === '5') {
-        const responseText = \`👨‍💼 *Atendimento Personalizado*
+\${chatbotConfig.address}
 
-Olá! Você será direcionado para um de nossos atendentes especializados.
+🚗 Fácil acesso e estacionamento
+🗺️ Ponto de referência: [Descreva um ponto próximo]
 
-💬 *Um momento que já vamos te atender!*
+Digite *5* se precisar de mais informações sobre como chegar!
+\`,
+    "3": \`
+🕒 *Horário de Funcionamento*
 
-Em breve, um membro da nossa equipe entrará em contato para:
-• Tirar suas dúvidas
-• Fazer seu orçamento personalizado
-• Ajudar com seu pedido
-• Oferecer o melhor atendimento
+📅 Segunda à Sexta: 08:00 às 18:00
+📅 Sábado: 08:00 às 16:00  
+📅 Domingo: Fechado
 
-✅ *Aguarde que logo responderemos!*
+⚠️ *Importante:* Nossos horários podem variar em feriados.
 
-Digite *menu* se quiser ver outras opções.\`;
-        
-        await message.reply(responseText);
-    }
-    
-    // Mensagem padrão
-    else {
-        const defaultText = \`🤖 Olá! Não entendi sua mensagem.
+Para confirmação, digite *5* para falar conosco!
+\`,
+    "4": \`
+🎁 *Promoções Especiais*
 
-Digite *menu* para ver todas as opções disponíveis.
+🔥 Temos sempre ofertas imperdíveis para você!
 
-Ou escolha uma das opções rápidas:
-• *1* - Informações
-• *2* - Preços  
-• *3* - Benefícios
-• *4* - Como fazer pedido
-• *5* - Falar com atendente\`;
-        
-        await message.reply(defaultText);
-    }
-});
+${segment === 'Lanchonete' ? '• 2 Hambúrguers por R$ 25,00\\n• Pizza família + refrigerante por R$ 35,00' :
+  segment === 'Salão de Beleza' ? '• Pacote completo (corte + escova + unha) por R$ 80,00\\n• Progressiva com 30% de desconto' :
+  '• Promoções especiais toda semana\\n• Descontos para clientes fiéis'}
 
-client.initialize();`;
+📲 Digite *5* para saber mais detalhes com nosso atendente!
+\`,
+    "5": \`
+👥 *Conectando com Atendente...*
+
+Um momento! Você será transferido para um de nossos atendentes.
+
+📞 *WhatsApp:* \${chatbotConfig.whatsapp}
+⏰ *Tempo de resposta:* Até 5 minutos
+
+Obrigado por escolher a *\${chatbotConfig.businessName}*! 🙏
+\`
+  };
+
+  return {
+    welcomeMessage,
+    responses,
+    config: chatbotConfig
+  };
+}
+
+// Exportar o chatbot
+window.chatbot = initializeChatbot();
+console.log("🤖 Chatbot inicializado para", chatbotConfig.businessName);`;
+  };
 
   const downloadChatbot = () => {
-    setIsDownloading(true);
+    const script = generateChatbotScript();
+    const blob = new Blob([script], { type: 'text/javascript' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chatbot-${paymentData.businessData.businessName.toLowerCase().replace(/\s+/g, '-')}.js`;
+    a.click();
+    window.URL.revokeObjectURL(url);
     
-    const element = document.createElement("a");
-    const file = new Blob([chatbotCode], { type: 'text/javascript' });
-    element.href = URL.createObjectURL(file);
-    element.download = "meu-chatbot-whatsapp.js";
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-    
-    setTimeout(() => {
-      setIsDownloading(false);
-      toast.success("Chatbot baixado com sucesso! 🎉");
-    }, 1000);
+    toast.success('Chatbot baixado com sucesso!');
   };
 
-  const openWhatsAppSupport = () => {
-    const message = "Olá! Acabei de adquirir o chatbot para WhatsApp e gostaria de suporte para instalação. 🤖";
-    const phone = "5511999999999"; // Número de suporte
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="p-8 text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <h2 className="text-xl font-semibold mb-2">Verificando seu pagamento...</h2>
+            <p className="text-gray-600">Aguarde enquanto confirmamos sua compra</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+            <h2 className="text-xl font-semibold mb-2 text-red-600">Erro na Verificação</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Link to="/">
+              <Button variant="outline">Voltar ao Início</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
-        {/* Header de Sucesso */}
+        {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mr-4">
-              <CheckCircle className="w-12 h-12 text-green-600" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-green-600 mb-2">Pagamento Confirmado! 🎉</h1>
-              <p className="text-xl text-gray-600">Seu chatbot está pronto para download</p>
-            </div>
-          </div>
-          
           <Logo size="lg" className="justify-center mb-4" />
-          
-          <div className="flex justify-center space-x-4 mb-6">
-            <Badge className="bg-green-500 hover:bg-green-600 px-4 py-2">
-              <Star className="w-4 h-4 mr-1" />
-              Produto Digital
-            </Badge>
-            <Badge variant="outline" className="border-green-500 text-green-600 px-4 py-2">
-              <Gift className="w-4 h-4 mr-1" />
-              Pronto para Usar
-            </Badge>
-          </div>
+          <Badge className="bg-green-500 hover:bg-green-600 mb-4">
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Pagamento Confirmado
+          </Badge>
         </div>
 
-        {/* Card Principal */}
-        <Card className="shadow-2xl border-0 mb-8">
-          <CardHeader className="text-center bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-t-lg">
-            <CardTitle className="text-2xl flex items-center justify-center">
-              <MessageCircle className="w-6 h-6 mr-2" />
-              Seu Chatbot de WhatsApp
-            </CardTitle>
-            <CardDescription className="text-green-100">
-              Automatize seu atendimento e aumente suas vendas
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-8">
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-700 mb-4">
-                  ✅ O que você recebeu:
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5" />
-                    <span className="text-gray-600">Chatbot totalmente funcional</span>
-                  </div>
-                  <div className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5" />
-                    <span className="text-gray-600">Menu interativo com 5 opções</span>
-                  </div>
-                  <div className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5" />
-                    <span className="text-gray-600">Respostas automáticas personalizadas</span>
-                  </div>
-                  <div className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5" />
-                    <span className="text-gray-600">Redirecionamento para atendimento humano</span>
-                  </div>
-                  <div className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5" />
-                    <span className="text-gray-600">Suporte completo para instalação</span>
-                  </div>
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Confirmação */}
+          <Card className="shadow-xl border-0">
+            <CardHeader>
+              <CardTitle className="flex items-center text-2xl text-green-600">
+                <CheckCircle className="w-6 h-6 mr-3" />
+                Pagamento Aprovado!
+              </CardTitle>
+              <CardDescription>
+                Seu chatbot personalizado está pronto para download
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-green-50 rounded-lg p-4">
+                <h4 className="font-semibold text-green-800 mb-2">✅ Resumo da Compra</h4>
+                <div className="space-y-2 text-sm text-green-700">
+                  <div><strong>Produto:</strong> Chatbot WhatsApp Personalizado</div>
+                  <div><strong>Valor:</strong> R$ {(paymentData.amount / 100).toFixed(2)}</div>
+                  <div><strong>Status:</strong> Pago</div>
+                  <div><strong>Negócio:</strong> {paymentData.businessData.businessName}</div>
                 </div>
               </div>
-              
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-700 mb-4">
-                  🚀 Próximos passos:
-                </h3>
-                <div className="space-y-3 text-sm text-gray-600">
-                  <div className="flex items-start">
-                    <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs mr-3 mt-0.5">1</span>
-                    <span>Baixe o arquivo do chatbot</span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs mr-3 mt-0.5">2</span>
-                    <span>Instale Node.js no seu computador</span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs mr-3 mt-0.5">3</span>
-                    <span>Execute o chatbot seguindo as instruções</span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs mr-3 mt-0.5">4</span>
-                    <span>Conecte seu WhatsApp escaneando o QR Code</span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs mr-3 mt-0.5">5</span>
-                    <span>Comece a automatizar seu atendimento!</span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div className="mt-8 space-y-4">
-              <Button 
+              <div className="space-y-3">
+                <h4 className="font-semibold text-gray-700">📦 O que você recebeu:</h4>
+                <div className="space-y-2">
+                  {[
+                    "Chatbot 100% personalizado para seu negócio",
+                    "Menu interativo com 5 opções principais",
+                    "Respostas automáticas personalizadas",
+                    "Código JavaScript pronto para usar",
+                    "Instruções completas de instalação",
+                    "Suporte via WhatsApp"
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center">
+                      <CheckCircle className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Download */}
+          <Card className="shadow-xl border-0">
+            <CardHeader>
+              <CardTitle className="flex items-center text-xl">
+                <Download className="w-5 h-5 mr-2 text-blue-600" />
+                Baixar seu Chatbot
+              </CardTitle>
+              <CardDescription>
+                Chatbot personalizado para {paymentData.businessData.businessName}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-800 mb-2">🤖 Seu Chatbot Inclui:</h4>
+                <div className="space-y-1 text-sm text-blue-700">
+                  <div>• Mensagem de boas-vindas personalizada</div>
+                  <div>• Menu com 5 opções de atendimento</div>
+                  <div>• Informações do seu negócio</div>
+                  <div>• Redirecionamento para WhatsApp</div>
+                  <div>• Código limpo e documentado</div>
+                </div>
+              </div>
+
+              <Button
                 onClick={downloadChatbot}
-                disabled={isDownloading}
-                className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                 size="lg"
               >
-                {isDownloading ? (
-                  <>
-                    <Download className="w-5 h-5 mr-2 animate-pulse" />
-                    Baixando...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-5 h-5 mr-2" />
-                    Baixar Meu Chatbot
-                  </>
-                )}
+                <Download className="w-5 h-5 mr-2" />
+                Baixar Chatbot Agora
               </Button>
-              
-              <Button 
-                onClick={openWhatsAppSupport}
-                variant="outline"
-                className="w-full border-green-500 text-green-600 hover:bg-green-50 py-6 text-lg rounded-xl"
-                size="lg"
-              >
-                <MessageCircle className="w-5 h-5 mr-2" />
-                Preciso de Ajuda - Suporte WhatsApp
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Instruções de Instalação */}
-        <Card className="shadow-xl border-0">
-          <CardHeader>
-            <CardTitle className="text-xl text-center">📖 Instruções de Instalação</CardTitle>
-            <CardDescription className="text-center">
-              Siga estes passos para colocar seu chatbot no ar
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-gray-50 rounded-xl p-6">
-              <h4 className="font-semibold mb-4">💻 Requisitos:</h4>
-              <ul className="space-y-2 text-sm text-gray-600 mb-6">
-                <li>• Computador com Windows, Mac ou Linux</li>
-                <li>• Conexão estável com a internet</li>
-                <li>• Node.js instalado (baixe em nodejs.org)</li>
-                <li>• WhatsApp no celular</li>
-              </ul>
-
-              <h4 className="font-semibold mb-4">⚙️ Como instalar:</h4>
-              <ol className="space-y-2 text-sm text-gray-600">
-                <li>1. Baixe o arquivo do chatbot acima</li>
-                <li>2. Crie uma pasta no seu computador (ex: "MeuChatbot")</li>
-                <li>3. Coloque o arquivo baixado dentro da pasta</li>
-                <li>4. Abra o terminal/prompt na pasta</li>
-                <li>5. Execute: <code className="bg-gray-200 px-2 py-1 rounded">npm install whatsapp-web.js qrcode-terminal</code></li>
-                <li>6. Execute: <code className="bg-gray-200 px-2 py-1 rounded">node meu-chatbot-whatsapp.js</code></li>
-                <li>7. Escaneie o QR Code com seu WhatsApp</li>
-                <li>8. Pronto! Seu chatbot está funcionando!</li>
-              </ol>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <div className="text-center mt-8 text-gray-500">
-          <p>© 2024 BotVendas - Automatize seu atendimento e aumente suas vendas</p>
-          <p className="text-sm mt-2">
-            Dúvidas? Entre em contato pelo nosso suporte via WhatsApp
-          </p>
+              <div className="text-center">
+                <Link to="/setup-instructions" state={{ businessData: paymentData.businessData }}>
+                  <Button variant="outline" className="w-full">
+                    Ver Instruções de Instalação
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Suporte */}
+        <Card className="mt-8 shadow-lg border-0 bg-gradient-to-r from-purple-50 to-pink-50">
+          <CardContent className="p-6 text-center">
+            <MessageCircle className="w-8 h-8 mx-auto mb-3 text-purple-600" />
+            <h3 className="text-lg font-semibold mb-2">Precisa de Ajuda?</h3>
+            <p className="text-gray-600 mb-4">
+              Nossa equipe está pronta para te ajudar com a instalação
+            </p>
+            <Button 
+              variant="outline" 
+              className="border-purple-200 text-purple-700 hover:bg-purple-50"
+              onClick={() => window.open(`https://wa.me/5511999999999?text=Olá! Comprei o chatbot para ${paymentData.businessData.businessName} e preciso de ajuda com a instalação.`, '_blank')}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Suporte via WhatsApp
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

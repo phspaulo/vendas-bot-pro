@@ -19,7 +19,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -35,43 +34,64 @@ serve(async (req) => {
       Deno.env.get('STRIPE_WEBHOOK_SECRET')!
     )
     
-    console.log('Webhook recebido:', event.type)
+    console.log('✅ Webhook recebido:', event.type)
   } catch (err) {
-    console.error('Erro na validação do webhook:', err.message)
+    console.error('❌ Erro na validação do webhook:', err.message)
     return new Response(err.message, { status: 400 })
   }
 
-  // Processa o evento de pagamento confirmado
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
 
-    console.log('Sessão completada:', session.id)
-    console.log('Customer email:', session.customer_details?.email)
-    console.log('Client reference ID:', session.client_reference_id)
+    console.log('💰 Sessão completada:', session.id)
+    console.log('📧 Customer email:', session.customer_details?.email)
+    console.log('💾 Metadata:', session.metadata)
 
     try {
-      // Salva o pagamento no banco de dados
-      const { error } = await supabase
+      // Buscar o registro do pagamento existente
+      const { data: existingPayment, error: fetchError } = await supabase
         .from('pagamentos')
-        .insert({
-          email: session.customer_details?.email || 'guest@example.com',
-          status: 'pago',
-          stripe_session: session.id,
-          created_at: new Date().toISOString()
-        })
+        .select('*')
+        .eq('stripe_session', session.id)
+        .single()
 
-      if (error) {
-        console.error('Erro ao salvar pagamento:', error)
-        return new Response(JSON.stringify({ error: 'Erro no banco de dados' }), { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('❌ Erro ao buscar pagamento:', fetchError)
+        throw fetchError
       }
 
-      console.log('Pagamento salvo com sucesso para:', session.customer_details?.email)
+      // Atualizar o pagamento para pago
+      const { error: updateError } = await supabase
+        .from('pagamentos')
+        .upsert({
+          email: session.customer_details?.email || session.metadata?.email || 'guest@example.com',
+          nome: session.customer_details?.name || session.metadata?.businessName || '',
+          status: 'pago',
+          stripe_session: session.id,
+          valor: session.amount_total || 2990,
+          moeda: session.currency || 'brl',
+          // Dados do negócio do metadata
+          business_name: session.metadata?.businessName || '',
+          business_segment: session.metadata?.segment || '',
+          business_whatsapp: session.metadata?.whatsapp || '',
+          business_address: session.metadata?.address || '',
+          business_social_media: session.metadata?.socialMediaLink || '',
+          business_description: session.metadata?.description || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'stripe_session'
+        })
+
+      if (updateError) {
+        console.error('❌ Erro ao atualizar pagamento:', updateError)
+        throw updateError
+      }
+
+      console.log('✅ Pagamento atualizado com sucesso para:', session.customer_details?.email)
 
     } catch (dbError) {
-      console.error('Erro na operação do banco:', dbError)
+      console.error('❌ Erro na operação do banco:', dbError)
       return new Response(JSON.stringify({ error: 'Erro interno do servidor' }), { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

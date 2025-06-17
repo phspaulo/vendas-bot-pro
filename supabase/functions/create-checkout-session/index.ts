@@ -14,8 +14,16 @@ serve(async (req) => {
   }
 
   try {
-    const { businessData } = await req.json();
+    const { businessData, userId, userEmail } = await req.json();
     
+    console.log('🚀 Criando sessão de checkout para:', userEmail);
+    console.log('📋 Dados do negócio:', businessData);
+    
+    // Validações básicas
+    if (!businessData?.businessName || !businessData?.email || !businessData?.whatsapp) {
+      throw new Error("Dados obrigatórios do negócio não fornecidos");
+    }
+
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2024-04-10",
@@ -29,8 +37,9 @@ serve(async (req) => {
           price_data: {
             currency: "brl",
             product_data: {
-              name: "Chatbot Personalizado para WhatsApp",
-              description: `Chatbot personalizado para ${businessData?.businessName || 'seu negócio'}`,
+              name: "🤖 Chatbot Personalizado para WhatsApp",
+              description: `Chatbot automatizado para ${businessData.businessName} - Segmento: ${businessData.segment}`,
+              images: ["https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=300"],
             },
             unit_amount: 2990, // R$ 29,90 em centavos
           },
@@ -40,14 +49,20 @@ serve(async (req) => {
       mode: "payment",
       success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/`,
-      customer_email: businessData?.email,
+      customer_email: businessData.email,
       metadata: {
-        businessName: businessData?.businessName || "",
-        segment: businessData?.segment || "",
-        whatsapp: businessData?.whatsapp || "",
-        email: businessData?.email || "",
+        userId: userId || 'guest',
+        businessName: businessData.businessName || "",
+        segment: businessData.segment || "",
+        whatsapp: businessData.whatsapp || "",
+        email: businessData.email || "",
+        address: businessData.address || "",
+        socialMediaLink: businessData.socialMediaLink || "",
+        description: businessData.description || "",
       },
     });
+
+    console.log('✅ Sessão criada com sucesso:', session.id);
 
     // Create initial payment record
     const supabase = createClient(
@@ -55,11 +70,26 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    await supabase.from("pagamentos").insert({
-      email: businessData?.email || "",
+    const { error: insertError } = await supabase.from("pagamentos").insert({
+      email: businessData.email,
+      nome: businessData.businessName,
       status: "processando",
-      stripe_session_id: session.id,
+      stripe_session: session.id,
+      valor: 2990,
+      moeda: "brl",
+      business_name: businessData.businessName,
+      business_segment: businessData.segment,
+      business_whatsapp: businessData.whatsapp,
+      business_address: businessData.address,
+      business_social_media: businessData.socialMediaLink,
+      business_description: businessData.description,
     });
+
+    if (insertError) {
+      console.error('❌ Erro ao criar registro inicial:', insertError);
+    } else {
+      console.log('✅ Registro inicial criado com sucesso');
+    }
 
     return new Response(
       JSON.stringify({ sessionId: session.id, url: session.url }),
@@ -69,7 +99,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Erro ao criar sessão:", error);
+    console.error("❌ Erro ao criar sessão:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
